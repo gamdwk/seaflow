@@ -1,6 +1,6 @@
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
-from seaflow.exts import db
+from seaflow.main.exts import db
 from run import app
 
 migrate = Migrate(app, db)

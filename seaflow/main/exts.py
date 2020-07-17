@@ -4,11 +4,11 @@ from flask_cors import CORS
 from flask_httpauth import HTTPTokenAuth
 from flask_mail import Mail
 from flask_bcrypt import Bcrypt
-from celery import Celery
+from .bp import api_bp
 
 db = SQLAlchemy()
-api = Api()
-cors = CORS()
+api = Api(prefix='/v1')
+cors = CORS(origins='*')
 auth = HTTPTokenAuth(scheme='JWT')
 mail = Mail()
 bcrypt = Bcrypt()

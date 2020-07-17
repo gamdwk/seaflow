@@ -1,7 +1,3 @@
-def create_secret():
-    import os
-    return os.urandom(16)
-
-
-if __name__ == '__main__':
-    print(create_secret())
+from .rediscli import save_check_code, verify_code
+from .secret import create_check_code
+from .tasks import send_mail
