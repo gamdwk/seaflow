@@ -54,7 +54,7 @@ class Auth(Resource):
 
     def put(self):
         if g.token_type != "refresh":
-            raise BadSignature("token 类型错误")
+            raise ApiException(description="token类型错误")
         access_token, refresh_token = create_login_token()
         return auth_response.marshal({"access_token": access_token,
                                       "refresh_token": refresh_token})
@@ -132,13 +132,13 @@ class User(Resource):
             else:
                 u = UserModel.query.filter_by(email=args["email"]).first()
             if u is None:
-                return {"code": 404, "message": "用户不存在"}
+                return {"code": 404, "message": "用户不存在"}, 404
             db.session.delete(u)
             db.session.commit()
             return {"code": 0, "message": "删除成功"}
         except:
             db.session.rollback()
-            return {"code": 500, "message": "删除失败"}
+            return {"code": 500, "message": "删除失败"}, 500
 
 
 class Email(Resource):

@@ -5,16 +5,17 @@ from itsdangerous import BadSignature, SignatureExpired
 
 
 class ApiException(HTTPException):
-    code = 500,
-    description = "error"
-    status = 500
+    code = 500
+    description = "deed"
+    error_code = 500
 
-    def __init__(self, description=None, code=None, status=None, *args, **kwargs):
-        super().__init__(description, *args, **kwargs)
+    def __init__(self, description=None, code=None, error_code=None, *args, **kwargs):
+        super(ApiException, self).__init__(description, *args, **kwargs)
         if code:
             self.code = code
-        if status:
-            self.status = status
+        if error_code:
+            self.error_code = error_code
+        self.data = {"code": self.error_code, "message": self.description}
 
 
 class CodeError(ApiException):
@@ -25,4 +26,3 @@ class CodeError(ApiException):
 class DbError(ApiException):
     code = 500
     description = "数据库错误"
-    status = 500

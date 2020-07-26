@@ -1,6 +1,6 @@
 from seaflow.main.exts import auth
 from itsdangerous import TimedJSONWebSignatureSerializer, BadSignature, SignatureExpired
-from flask import current_app, g
+from flask import current_app, g, request
 from datetime import timedelta
 from ..helper.rediscli import get_salt
 from werkzeug.exceptions import Unauthorized
@@ -22,6 +22,9 @@ def verify_token(token):
     if salt != get_salt(uid):
         raise Unauthorized
     g.user = data['user']
+    if data['type'] is 'refresh':
+        if request.endpoint != "auth" or request.method != 'put':
+            raise Unauthorized("token类型错误")
     g.token_type = data['type']
     return True
 
@@ -42,7 +45,7 @@ def create_login_token(refresh=True):
         refresh_token = create_refresh_token(salt)
         return access_token.decode('ascii'), refresh_token.decode('ascii')
     else:
-        return access_token.decode('ascii')
+        return access_token.decode('ascii'), None
 
 
 def create_refresh_token(salt):
