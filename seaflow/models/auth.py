@@ -1,4 +1,5 @@
 from seaflow.main.exts import db, bcrypt
+from ..helper.rediscli import save_salt
 
 
 class User(db.Model):
@@ -19,6 +20,7 @@ class User(db.Model):
 
     def hash_password(self, password):
         self._password_hash = bcrypt.generate_password_hash(password)
+        save_salt(self.id)
 
     def verify_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
@@ -27,6 +29,11 @@ class User(db.Model):
         self.email = email
         self.hash_password(password)
         self.username = email
+
+    def update(self, data):
+        for attr in data.keys():
+            if attr:
+                self.__setattr__(attr, data[attr])
 
 
 class Role(db.Model):

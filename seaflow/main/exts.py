@@ -4,10 +4,10 @@ from flask_cors import CORS
 from flask_httpauth import HTTPTokenAuth
 from flask_mail import Mail
 from flask_bcrypt import Bcrypt
-from .bp import api_bp
+
 
 db = SQLAlchemy()
-api = Api(prefix='/v1')
+api = Api(catch_all_404s=True)
 cors = CORS(origins='*')
 auth = HTTPTokenAuth(scheme='JWT')
 mail = Mail()

@@ -22,5 +22,10 @@ def random_code(n=4, need_letter=True):
     return s
 
 
+def create_salt():
+    n = randint(4, 6)
+    return random_code(n=n)
+
+
 if __name__ == '__main__':
     print(create_secret())

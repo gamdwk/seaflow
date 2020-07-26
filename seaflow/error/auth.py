@@ -2,7 +2,7 @@ from . import ApiException
 
 
 class UserNotExist(ApiException):
-    code = 401
+    code = 404
     description = "用户不存在"
 
 
@@ -14,3 +14,9 @@ class UserAlreadyExist(ApiException):
 class PasswordError(ApiException):
     code = 401
     description = "密码错误"
+
+
+class AuthException(ApiException):
+    code = 404
+    status = 404
+    description = "错误"

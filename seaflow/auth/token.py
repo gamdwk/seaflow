@@ -1,36 +1,59 @@
 from seaflow.main.exts import auth
 from itsdangerous import TimedJSONWebSignatureSerializer, BadSignature, SignatureExpired
 from flask import current_app, g
-from flask_restful import abort
 from datetime import timedelta
+from ..helper.rediscli import get_salt
+from werkzeug.exceptions import Unauthorized
 
 
 @auth.verify_token
 def verify_token(token):
     s = TimedJSONWebSignatureSerializer(
-        current_app.config['secret_key']
+        current_app.config['SECRET_KEY']
     )
-    data = s.loads(token)
-    return data
+    try:
+        data = s.loads(token)
+        uid = data["user"]["uid"]
+    except SignatureExpired:
+        raise Unauthorized
+    except BadSignature:
+        raise Unauthorized
+    salt = data["salt"]
+    if salt != get_salt(uid):
+        raise Unauthorized
+    g.user = data['user']
+    g.token_type = data['type']
+    return True
 
 
 def create_login_token(refresh=True):
     access_serializer = TimedJSONWebSignatureSerializer(
-        current_app.config['secret_key'], expires_in=timedelta(hours=1).total_seconds()
+        current_app.config['SECRET_KEY'], expires_in=timedelta(hours=1).total_seconds()
     )
+    uid = g.user["uid"]
+    salt = get_salt(uid)
     access_data = {
         "user": g.user,
-        "type": "access"
+        "type": "access",
+        "salt": salt
     }
+    access_token = access_serializer.dumps(access_data)
+    if refresh:
+        refresh_token = create_refresh_token(salt)
+        return access_token.decode('ascii'), refresh_token.decode('ascii')
+    else:
+        return access_token.decode('ascii')
 
+
+def create_refresh_token(salt):
     refresh_serializer = TimedJSONWebSignatureSerializer(
-        current_app.config['secret_key'], expires_in=timedelta(days=10).total_seconds()
+        current_app.config['SECRET_KEY'], expires_in=timedelta(days=10).total_seconds()
     )
 
     refresh_data = {
         "user": g.user,
-        "type": "refresh"
+        "type": "refresh",
+        "salt": salt
     }
-    access_token = access_serializer.dumps(g.user)
-    refresh_token = refresh_serializer.dumps(g.user)
-    return access_token, refresh_token
+    refresh_token = refresh_serializer.dumps(refresh_data)
+    return refresh_token
