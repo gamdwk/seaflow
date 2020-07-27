@@ -26,3 +26,4 @@ class CodeError(ApiException):
 class DbError(ApiException):
     code = 500
     description = "数据库错误"
+    error_code = 40000

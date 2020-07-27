@@ -65,7 +65,8 @@ class Auth(Resource):
 
 class User(Resource):
     method_decorators = {'get': [auth.login_required()],
-                         'put': [auth.login_required()]}
+                         'put': [auth.login_required()],
+                         "delete": [auth.login_required(role="administrator")]}
 
     def __init__(self):
         self.reqparse = reqparse.copy()
@@ -104,7 +105,7 @@ class User(Resource):
         if me:
             raise UserAlreadyExist
         u = UserModel()
-        u.init(email, password)
+        u.init_user(email, password)
         db.session.add(u)
         try:
             db.session.commit()
@@ -122,7 +123,7 @@ class User(Resource):
             return user_response.marshal(u.__dict__)
         except:
             db.session.rollback()
-            raise ApiException(description="更新失败", code=500)
+            raise DbError
 
     def delete(self):
         args = self.del_parse.parse_args()
@@ -138,7 +139,7 @@ class User(Resource):
             return {"code": 0, "message": "删除成功"}
         except:
             db.session.rollback()
-            return {"code": 500, "message": "删除失败"}, 500
+            raise DbError
 
 
 class Email(Resource):

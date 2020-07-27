@@ -4,6 +4,7 @@ from flask import current_app, g, request
 from datetime import timedelta
 from ..helper.rediscli import get_salt
 from werkzeug.exceptions import Unauthorized
+from ..models.auth import User
 
 
 @auth.verify_token
@@ -60,3 +61,10 @@ def create_refresh_token(salt):
     }
     refresh_token = refresh_serializer.dumps(refresh_data)
     return refresh_token
+
+
+@auth.get_user_roles
+def get_role(user):
+    uid = g.user['uid']
+    u = User.query.get(uid)
+    return u.get_role()
