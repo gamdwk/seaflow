@@ -14,6 +14,8 @@ class User(db.Model):
     pageBgc = db.Column(db.String(64))
     avatar = db.Column(db.String(64))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), default=3)
+    comments = db.relationship("Comments", backref="auth", lazy="dynamic")
+    news = db.relationship("News", backref="auth", lazy="dynamic")
 
     @property
     def password_hash(self):
@@ -32,9 +34,11 @@ class User(db.Model):
         self.username = email
 
     def update(self, data):
-        for attr in data.keys():
-            if data[attr]:
-                self.__setattr__(attr, data[attr])
+        for key, value in data.items():
+            if value is None:
+                continue
+            else:
+                self.__setattr__(key, value)
 
     def get_role(self):
         return self.role.name
@@ -57,6 +61,14 @@ class Role(db.Model):
 def create_role():
     roles = ["administrator", "auditor", "member"]
     x = 1
+    try:
+        u = User()
+        u.init_user('admin', 'admin')
+        u.role_id = 1
+        db.session.add(u)
+        db.session.commit()
+    except:
+        db.session.rollback()
     for role in roles:
         try:
             r = Role()

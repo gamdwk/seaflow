@@ -120,6 +120,8 @@ class User(Resource):
             uid = g.user["uid"]
             u = UserModel.query.get(uid)
             u.update(args)
+            db.session.commit()
+            u = UserModel.query.get(uid)
             return user_response.marshal(u.__dict__)
         except:
             db.session.rollback()
@@ -146,10 +148,9 @@ class Email(Resource):
 
     def __init__(self):
         self.reqparse = RequestParser()
-        self.reqparse.add_argument('email', type=str, nullable=False,
-                                   help='email is required!')
+        self.reqparse.add_argument('email', type=str, nullable=False)
         self.reqparse.add_argument('subject', type=int, nullable=False,
-                                   choices=[0, 1], help='subject error')
+                                   choices=[0, 1])
 
         self.subject_dict = {
             0: 'register',
@@ -168,6 +169,8 @@ class Email(Resource):
 
 
 class Password(Resource):
+    """重置密码"""
+
     def __init__(self):
         self.reqparse = reqparse.copy()
 
@@ -194,7 +197,37 @@ class Password(Resource):
         return common_response.marshal()
 
 
+class PasswordWhenLogin(Resource):
+    """修改密码"""
+    method_decorators = [auth.login_required()]
+
+    def __init__(self):
+        self.parser = RequestParser()
+        self.parser.add_argument('old_password', type=str, required=True,
+                                 nullable=False)
+        self.parser.add_argument('new_password', type=str, required=True)
+
+    def put(self):
+        args = self.parser.parse_args()
+        uid = g.user['uid']
+        old_password = args["old_password"]
+        new_password = args["new_password"]
+        u = UserModel.query.get(uid)
+        if not u.verify_password(old_password):
+            raise PasswordError
+        try:
+            u.hash_password(new_password)
+            db.session.commit()
+            access_token, refresh_token = create_login_token()
+            return auth_response.marshal({"access_token": access_token,
+                                          "refresh_token": refresh_token})
+        except:
+            db.session.rollback()
+            raise DbError
+
+
 api.add_resource(Auth, '/auth', endpoint='auth')
 api.add_resource(Email, '/email', endpoint='email')
 api.add_resource(User, '/user', '/user/uid/<int:uid>', endpoint="user")
 api.add_resource(Password, '/user/password', endpoint="password")
+api.add_resource(PasswordWhenLogin, '/password')
