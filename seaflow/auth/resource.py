@@ -39,7 +39,7 @@ class Auth(Resource):
             me = UserModel.query.filter_by(email=args['email']).first()
         except:
             db.session.rollback()
-            raise ApiException(description="错误", code=500)
+            raise DbError
         if me is None:
             raise UserNotExist
         if not me.verify_password(password=args['password']):

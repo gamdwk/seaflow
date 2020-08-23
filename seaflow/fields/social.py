@@ -5,7 +5,8 @@ newsfield = {
     'content': String(),
     'imgs': List(String),
     'time': DateTime(dt_format='iso8601'),
-    'uid': Integer
+    'uid': Integer,
+    'tid': Integer
 }
 
 createnewsfield = {
@@ -13,5 +14,21 @@ createnewsfield = {
     'tid': Integer
 }
 
+newslistfield = {
+
+}
+newslist = {
+    "news": []
+}
+
+newslike = {
+    'tid': Integer,
+    'uid': Integer,
+    'likes': Integer,
+    'liked': Boolean(default=False)
+}
+
 createnewsRes = ResponseField(createnewsfield)
 newsRes = ResponseField(newsfield)
+newslistRes = ResponseField(newslist)
+newslikeRes = ResponseField(newslike)

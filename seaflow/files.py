@@ -31,7 +31,7 @@ class Files(Resource):
             print(f.filename)
             dest, filename = create_filename(root, folder, f.filename)
             f.save(dest)
-            file.init(name=f.name, path=join(dest, filename))
+            file.init(name=f.name, path=join(dest, filename), type=folder)
         return
 
 

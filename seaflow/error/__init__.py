@@ -27,3 +27,19 @@ class DbError(ApiException):
     code = 500
     description = "数据库错误"
     error_code = 40000
+
+
+class NotFound(ApiException):
+    code = 404
+    description = "Not found"
+    error_code = 404
+
+
+class NotAllow(ApiException):
+    code = 403
+    description = "该资源不允许访问"
+    error_code = 403
+
+
+class NewsNotYours(ApiException):
+    error_code = 30001

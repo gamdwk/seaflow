@@ -33,3 +33,4 @@ from .auth import *
 from .error import *
 from .main import *
 from .files import *
+from .social import *
