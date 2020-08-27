@@ -11,10 +11,10 @@ class User(db.Model):
     sex = db.Column(db.Integer, default=2)
     introduction = db.Column(db.String(128))
     lock = db.Column(db.Boolean, default=False)
-    pageBgc = db.Column(db.String(64))
-    avatar = db.Column(db.String(64))
+    pageBgc = db.Column(db.String(128))
+    avatar = db.Column(db.String(128))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), default=3)
-    """comments = db.relationship("Comments", backref="auth", lazy="dynamic")"""
+    comments = db.relationship("Comments", backref="auth", lazy="dynamic")
     news = db.relationship("News", backref="auth", lazy="dynamic")
 
     @property

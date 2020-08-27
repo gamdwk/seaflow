@@ -10,11 +10,12 @@ def register_blueprint(app):
 
 
 def register_ext(app):
-    from seaflow.main.exts import db, cors, mail, bcrypt
+    from seaflow.main.exts import db, cors, mail, bcrypt, io
     db.init_app(app)
     cors.init_app(app)
     mail.init_app(app)
     bcrypt.init_app(app)
+    io.init_app(app)
 
 
 def create_app(config):

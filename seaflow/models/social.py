@@ -1,6 +1,10 @@
 from seaflow.main.exts import db
 import datetime
 from werkzeug.utils import cached_property
+from ..fields.social import commentsField
+from flask_restful import marshal
+from ..helper.rediscli import news_is_like, get_like
+from flask import g
 
 
 class News(db.Model):
@@ -8,8 +12,9 @@ class News(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     __content = db.relationship('Contents', backref="news", uselist=False)
     auth_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    # comments = db.relationship('Comments', backref="news", lazy="dynamic")
-    time = db.Column(db.DateTime, default=datetime.datetime.utcnow())
+    comments = db.relationship('Comments', backref="news")
+    time = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    groups = db.relationship("Group", backref="news", lazy="dynamic")
 
     def init(self, uid, content=None, imgs=None):
         # imgs：int list
@@ -34,42 +39,136 @@ class News(db.Model):
         else:
             return None
 
+    def make_fields(self, uid):
+        if self.comments:
+            comments = len(self.comments)
+        else:
+            comments = 0
+        return {"tid": self.id, "content": self.content, 'imgs': self.imgs,
+                "uid": uid, "time": self.time,
+                'liked': news_is_like(uid, self.id), 'likes': get_like(self.id),
+                "comments": comments,
+                "avatar": self.auth.avatar, "username": self.auth.username,
+                "sex": self.auth.sex
+                }
 
-"""class Comments(db.Model):
+
+class Comments(db.Model):
+    # 动态：news,父亲评论：parent,祖先评论:同一个group
     __tablename__ = "comments"
     id = db.Column(db.Integer, primary_key=True)
-    __content = db.Column(db.Text, nullable=False)
-    news_id = db.Column(db.Integer, db.ForeignKey('news.id'), nullable=False)
-    auth_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    replies = db.relationship('Comments', backref="parent", lazy="dynamic")
-    parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
-    time = db.Column(db.DateTime, default=datetime.datetime.now())
+    __content = db.relationship('Contents', backref="comments", uselist=False)
+    news_id = db.Column(db.Integer, db.ForeignKey('news.id'))
+    auth_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    # 一对多自引用
+    parent = db.relationship('Comments', backref="replies", remote_side=[id])
+    reply_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
+    time = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
 
-    def init(self, content, uid, news_id, parent_id=None):
+    def init(self, uid, news_id=None, content=None, imgs=None, parent=None
+             ):
+        # imgs：int list
         self.auth_id = uid
-        self.__content = content
-        self.news_id = news_id
-        if parent_id:
-            self.parent_id = parent_id"""
+        c = Contents()
+        c.init(content, imgs)
+        self.__content = c
+        db.session.add(c)
+        self.parent = Comments.query.get(parent)
+        db.session.commit()
+        if self.parent is None:
+            g = Group()
+            g.ancestor = self.id
+            g.news_id = news_id
+            self.news_id = news_id
+            db.session.add(g)
+            db.session.commit()
+            self.group_id = g.id
+        else:
+            self.group_id = self.parent.group_id
+            self.news_id = self.group.news_id
 
-"""class Replies(db.Model):
-    __tablename__ = "replies"
+    @cached_property
+    def content(self):
+        c = self.__content
+        if c:
+            return c.text
+        return None
+
+    @cached_property
+    def imgs(self):
+        c = self.__content
+        if c:
+            return c.imgs
+        else:
+            return None
+
+    @cached_property
+    def is_ancestors(self):
+        if self.parent:
+            return False
+        else:
+            return True
+
+    def make_field(self, uid=None):
+        if uid is None:
+            uid = g.user["uid"]
+        if self.parent:
+            parent = self.parent.id
+        else:
+            parent = self.id
+        res = {
+            'content': self.content,
+            'imgs': self.imgs,
+            'time': self.time,
+            'uid': self.auth_id,
+            'cid': self.id,
+            'tid': self.news_id,
+            'liked': news_is_like(uid, self.id, t=1),
+            'likes': get_like(self.id, t=1),
+            'parent': parent,
+            "ancestor": self.group.ancestor,
+            "group": self.group_id,
+            "avatar": self.auth.avatar, "username": self.auth.username,
+            "sex": self.auth.sex
+        }
+        return res
+
+
+class Group(db.Model):
+    __tablename__ = "groups"
     id = db.Column(db.Integer, primary_key=True)
-    news_id = db.Column(db.Integer, db.ForeignKey('news.id'), nullable=False)
-    auth_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    replies = db.relationship('Comments', backref="replies", lazy="dynamic")
-    parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
-    time = db.Column(db.DateTime, default=datetime.datetime.now())
-    content = db.Column(db.Text, nullable=False)
-"""
+    ancestor = db.Column(db.Integer)
+    members = db.relationship('Comments', backref="group", lazy="dynamic")
+    news_id = db.Column(db.Integer, db.ForeignKey('news.id'))
+
+    def make_fields(self, page=1, per_page=5, order_by=Comments.time,
+                    need_ancestor=False):
+        members = []
+        ms = self.members.order_by(order_by).paginate(page, per_page)
+        for m in ms.items:
+            if m.id == self.ancestor:
+                continue
+            members.append(m.make_field())
+        if need_ancestor:
+            ancestor = Comments.query.get(self.ancestor)
+            ancestor = ancestor.make_field()
+        else:
+            ancestor = self.ancestor
+        return {
+            "gid": self.id,
+            "tid": self.news_id,
+            "ancestor": ancestor,
+            "members": members
+        }
 
 
 class Files(db.Model):
     __tablename__ = "files"
     id = db.Column(db.Integer, primary_key=True)
     path = db.Column(db.String(100), nullable=False)
-    name = db.Column(db.String(100), nullable=True)
-    type = db.Column(db.String(64))
+    name = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.String(64), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('contents.id'))
 
     def init(self, path, name, type):
@@ -84,14 +183,15 @@ class Contents(db.Model):
     text = db.Column(db.Text)
     __imgs = db.relationship('Files', backref="parents", lazy="dynamic")
     news_id = db.Column(db.Integer, db.ForeignKey('news.id'))
+    comments_id = db.Column(db.Integer, db.ForeignKey('comments.id'))
 
     def init(self, text=None, imgs=None):
         self.text = text
         if isinstance(imgs, int):
-            Files.query.get(imgs).parent_id = self.id
+            Files.query.get(imgs).parents = self
         elif isinstance(imgs, list):
             for img in imgs:
-                Files.query.get(img).parent_id = self.id
+                Files.query.get(img).parents = self
 
     @cached_property
     def imgs(self):

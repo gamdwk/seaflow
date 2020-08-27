@@ -10,7 +10,6 @@ manager.add_command("db", MigrateCommand)
 if __name__ == '__main__':
     manager.run()
     """迁移：python manage.py db init(第一次迁移)
-            python manage.py db migrate
             python manage.py db upgrade
     回滚：python manage.py db downgrade 版本号
     历史版本：python manage.py db history

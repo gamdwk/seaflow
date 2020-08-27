@@ -31,27 +31,35 @@ def get_salt(uid):
     return cli.get(uid)
 
 
-# news_like:hash,news_id:news_likes
-def like_news(uid, news_id):
+type_tuple = ("news", "comments")
+
+
+# news_like:hash,tid_or_cid:news_likes
+def like_news(uid, tid_or_cid, t=0):
+    t = type_tuple[t]
     cli = StrictRedis(connection_pool=pool)
-    myset = "news" + str(news_id)
-    cli.hsetnx('news_likes', news_id, 0)
+    myset = t + str(tid_or_cid)
+    t = t + '_likes'
+    cli.hsetnx(t, tid_or_cid, 0)
     if cli.sismember(myset, uid):
-        cli.hincrby("news_likes", news_id, -1)
+        cli.hincrby(t, tid_or_cid, -1)
         cli.srem(myset, uid)
     else:
-        cli.hincrby("news_likes", news_id)
+        cli.hincrby(t, tid_or_cid)
         cli.sadd(myset, uid)
 
 
-def news_is_like(uid, news_id):
+def news_is_like(uid, tid_or_cid, t=0):
+    # t= "news" or "comments"
+    t = type_tuple[t]
     cli = StrictRedis(connection_pool=pool)
-    myset = "news" + str(news_id)
+    myset = t + str(tid_or_cid)
     return cli.sismember(myset, uid)
 
 
-def get_like(news_id):
+def get_like(tid_or_cid, t=0):
+    t = type_tuple[t]
     cli = StrictRedis(connection_pool=pool)
-    myset = "news_likes"
-    x = cli.hget(myset, news_id) or 0
+    myset = t + "_likes"
+    x = cli.hget(myset, tid_or_cid) or 0
     return x
