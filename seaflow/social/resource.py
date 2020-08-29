@@ -8,6 +8,7 @@ from flask import g
 from ..error import DbError, NotFound, NewsNotYours, ApiException
 from ..fields.social import newsRes, createnewsRes, newsfield, \
     newslikeRes, commentRes, GroupRes, RepliesRes
+from ..fields.auth import friendsRes
 from ..fields import ResponseField
 from ..helper.rediscli import news_is_like, like_news, get_like
 from werkzeug.exceptions import HTTPException
@@ -137,7 +138,8 @@ class Comment(Resource):
             t = News.query.get_or_404(tid)
             cs = t.groups.paginate(page=page, per_page=5)
             replies = [c.make_fields(need_ancestor=True) for c in cs.items]
-            return RepliesRes.marshal({"replies": replies})
+            return RepliesRes.marshal({"replies": replies, "current": page,
+                                       "pages": cs.pages})
 
     def post(self, tid=None):
         uid = g.user["uid"]
@@ -183,10 +185,99 @@ class Groups(Resource):
         return GroupRes.marshal(group.make_fields(page=page, need_ancestor=True))
 
 
-class GroupList(Resource):
+from ..main.exts import io
+from ..helper.rediscli import make_alive, make_down, is_alive
+from ..models.social import Messages
+from .chat import make_message_send
+from ..fields.social import friendsReply
+
+
+class Friends(Resource):
+    method_decorators = [auth.login_required()]
+
+    def __init__(self):
+        self.reparser = RequestParser()
+        self.reparser.add_argument('message', type=str)
+
+    def get(self, page=1):
+        uid = g.user["uid"]
+        me = User.query.get(uid)
+        friends = me.friends
+        friends = friends.paginate(page=page, per_page=5)
+        res = [f.make_friends(uid) for f in friends]
+        return friendsRes.marshal({
+            "friends": res,
+            "current": page,
+            "pages": friends.pages
+        })
+
+    def post(self, uid):
+        args = self.reparser.parse_args()
+        content = args["message"]
+        m = Messages()
+        m.init(g.user["uid"], uid, content=content, type="apply")
+        db.session.add(m)
+        db.session.commit()
+        if is_alive(uid):
+            io.emit('chat', m.make_fields(), room=uid,
+                    callback=make_message_send([m]))
+        return ResponseField().marshal()
+
+    def delete(self, uid):
+        m = Messages()
+        m.init(g.user["uid"], uid, content="您已被移除好友", type="notice")
+        db.session.add(m)
+        u = User.query.get_or_404(uid)
+        u.break_up(g.user["uid"])
+        db.session.commit()
+        if is_alive(uid):
+            io.emit('chat', m.make_fields(), room=uid,
+                    callback=make_message_send([m]))
+        return ResponseField().marshal()
+
+
+class UntreatedFriendsMessage(Resource):
+    method_decorators = [auth.login_required()]
+
     def get(self):
-        return {"code": 0, "data": {"gids": [g.id for g in Group.query.all()]}
-            , "message": "success"}
+        ms = Messages.query.filter_by(type="apply", agree=None).all()
+        res = [m.make_fields() for m in ms]
+        return friendsReply.marshal({
+            "reply": res
+        })
+
+
+class TreatedFriendsMessage(Resource):
+    method_decorators = [auth.login_required()]
+
+    def get(self):
+        ms = Messages.query.filter(Messages.type == "apply").filter(
+            Messages.agree is not None
+        ).all()
+        res = [m.make_fields() for m in ms]
+        return friendsReply.marshal({
+            "reply": res
+        })
+
+
+class AgreeFriends(Resource):
+    method_decorators = [auth.login_required()]
+
+    def __init__(self):
+        self.reparser = RequestParser()
+        self.reparser.add_argument('agree', type=bool, required=True)
+
+    def post(self, mid):
+        msg = Messages.query.get_or_404(mid)
+        uid = msg.from_user
+        u = User.query.get_or_404(uid)
+        args = self.reparser.parse_args()
+        if args["agree"]:
+            u.make_friends(g.user["uid"])
+        else:
+            u.break_up(g.user["uid"])
+        db.session.commit()
+        return ResponseField().marshal()
 
 
 api.add_resource(NewsResource, '/news', '/news/page/<int:page>', '/news/<int:id>',
@@ -195,4 +286,7 @@ api.add_resource(Like, '/like/news/<int:tid>', '/like/comments/<int:cid>')
 api.add_resource(Comment, '/comment', '/comment/<int:cid>',
                  '/news/<int:tid>/comments', '/news/<int:tid>/comments/<int:page>')
 api.add_resource(Groups, '/groups/<int:gid>', '/groups/<int:gid>/page/<int:page>')
-api.add_resource(GroupList, '/grouplist')
+api.add_resource(Friends, '/friends', '/friends/<int:uid>')
+api.add_resource(AgreeFriends, '/friends/agree')
+api.add_resource(UntreatedFriendsMessage, '/friends/not_handle')
+api.add_resource(TreatedFriendsMessage, '/friends/handled')

@@ -69,3 +69,4 @@ def get_suffix(filename):
 
 
 api.add_resource(Files, '/files', '/files/<int:id>')
+

@@ -1,4 +1,4 @@
-from flask_restful.fields import Integer, Nested, Url, String, Raw, Boolean
+from flask_restful.fields import Integer, Nested, Url, String, Raw, Boolean, List
 from flask_restful import marshal
 
 
@@ -37,7 +37,15 @@ user_register_field = {
 email_field = {
     'email': String
 }
+
+friends = {
+    "friends": List(Integer),
+    "current": Integer,
+    "pages": Integer
+}
+
 auth_response = ResponseField(auth_field)
 user_response = ResponseField(user_field)
 email_response = ResponseField(email_field)
 user_register_response = ResponseField(user_register_field)
+friendsRes = ResponseField(friends)

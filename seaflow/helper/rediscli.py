@@ -63,3 +63,33 @@ def get_like(tid_or_cid, t=0):
     myset = t + "_likes"
     x = cli.hget(myset, tid_or_cid) or 0
     return x
+
+
+def get_sid(uid):
+    cli = StrictRedis(connection_pool=pool)
+    return cli.hget("user_sid", uid)
+
+
+def set_sid(uid, sid):
+    cli = StrictRedis(connection_pool=pool)
+    cli.hset("user_sid", uid, sid)
+
+
+def delete_sid(uid):
+    cli = StrictRedis(connection_pool=pool)
+    cli.hdel("user_sid", uid)
+
+
+def is_alive(uid):
+    cli = StrictRedis(connection_pool=pool)
+    return cli.hget("is_alive", uid) or False
+
+
+def make_alive(uid):
+    cli = StrictRedis(connection_pool=pool)
+    cli.hset("is_alive", uid, 1)
+
+
+def make_down(uid):
+    cli = StrictRedis(connection_pool=pool)
+    cli.hset("is_alive", uid, 0)

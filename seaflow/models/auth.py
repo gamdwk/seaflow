@@ -16,6 +16,8 @@ class User(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), default=3)
     comments = db.relationship("Comments", backref="auth", lazy="dynamic")
     news = db.relationship("News", backref="auth", lazy="dynamic")
+    friend = db.relationship('User', backref="friends", remote_side=[id])
+    friend_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     @property
     def password_hash(self):
@@ -42,6 +44,16 @@ class User(db.Model):
 
     def get_role(self):
         return self.role.name
+
+    def make_friends(self, uid):
+        self.friends.append(User.query.get(uid))
+        friend = User.query.get(uid)
+        friend.friends.append(self)
+
+    def break_up(self, uid):
+        self.friends.remove(User.query.get(uid))
+        friend = User.query.get(uid)
+        friend.friends.remove(self)
 
 
 class Role(db.Model):
@@ -72,13 +84,15 @@ def create_role():
         except:
             db.session.rollback()
     try:
-        u = User.query.get(0)
-        if u is None:
-            u = User()
-            u.id = 0
+        u = User()
+        u1 = User()
+        db.session.add(u)
+        db.session.add(u1)
+        db.session.commit()
         u.init_user('admin', 'admin')
         u.role_id = 1
-        db.session.add(u)
+        u1.init_user('test', 'test')
+        u1.role_id = 2
         db.session.commit()
     except:
         db.session.rollback()

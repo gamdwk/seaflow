@@ -115,8 +115,10 @@ class Comments(db.Model):
             uid = g.user["uid"]
         if self.parent:
             parent = self.parent.id
+            parentUID = self.parent.auth_id
         else:
             parent = self.id
+            parentUID = None
         res = {
             'content': self.content,
             'imgs': self.imgs,
@@ -130,7 +132,8 @@ class Comments(db.Model):
             "ancestor": self.group.ancestor,
             "group": self.group_id,
             "avatar": self.auth.avatar, "username": self.auth.username,
-            "sex": self.auth.sex
+            "sex": self.auth.sex,
+            "parentUID": parentUID
         }
         return res
 
@@ -159,7 +162,9 @@ class Group(db.Model):
             "gid": self.id,
             "tid": self.news_id,
             "ancestor": ancestor,
-            "members": members
+            "members": members,
+            "pages": ms.pages,
+            "current": page
         }
 
 
@@ -199,3 +204,35 @@ class Contents(db.Model):
         for img in self.__imgs:
             imgs.append(img.path)
         return imgs
+
+
+class Messages(db.Model):
+    __tablename__ = "messages"
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text)
+    is_url = db.Column(db.Boolean, default=False)
+    from_user = db.Column(db.Integer)
+    to_user = db.Column(db.Integer)
+    type = db.Column(db.String, default="message")
+    # type分为message, apply(好友申请）,notice(系统通知）
+    is_send = db.Column(db.Boolean, default=False)
+    Agree = db.Column(db.Boolean)
+    time = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    def init(self, from_user, to_user, content=None, is_url=False, type="message"):
+        self.from_user = from_user
+        self.to_user = to_user
+        self.content = content
+        self.is_url = is_url
+        self.type = type
+
+    def make_fields(self):
+        return {
+            "mid": self.id,
+            "from": self.from_user,
+            "to": self.to_user,
+            "content": self.content,
+            "type": self.type,
+            "is_url": self.is_url,
+            "time": self.time
+        }

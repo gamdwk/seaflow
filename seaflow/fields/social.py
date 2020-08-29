@@ -46,23 +46,24 @@ commentsField = {
     "sex": Integer,
     "username": String
 }
-
+replycomments = commentsField.copy()
+replycomments["parentUID"] = Integer
 GroupField = {
     "gid": Integer,
     "ancestor": Nested(commentsField),
-    "members": List(Nested(commentsField))
+    "members": List(Nested(replycomments)),
+    "pages": Integer,
+    "current": Integer
 }
 
-replyField = {
-    "gid": Integer,
-    "ancestor": Nested(commentsField),
-    "members": List(Nested(commentsField))
-}
+replyField = GroupField
 commentList = {
     "groups": List(Nested(GroupField))
 }
 replyListField = {
-    'replies': List(Nested(replyField))
+    'replies': List(Nested(replyField)),
+    "current": Integer,
+    "pages": Integer
 }
 
 fileField = {
@@ -73,6 +74,24 @@ fileField = {
 fileListField = {
     "files": List(Nested(fileField))
 }
+
+messagesFields = {
+    "mid": Integer,
+    "from": Integer,
+    "to": Integer,
+    "content": String,
+    "type": String,
+    "is_url": Boolean,
+    "time": DateTime(dt_format='iso8601'),
+    "agree": Boolean
+}
+messageList = {
+    "messages": List(Nested(messagesFields)),
+}
+
+friendsReplyList = {
+    "reply": List(Nested(messagesFields))
+}
 createnewsRes = ResponseField(createnewsfield)
 newsRes = ResponseField(newsfield)
 newslistRes = ResponseField(newslist)
@@ -82,3 +101,6 @@ commentListRes = ResponseField(commentList)
 fileRes = ResponseField(fileListField)
 GroupRes = ResponseField(GroupField)
 RepliesRes = ResponseField(replyListField)
+MessagesRes = ResponseField(messagesFields)
+MessagesListRes = ResponseField(messageList)
+friendsReply = ResponseField(friendsReplyList)

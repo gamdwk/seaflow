@@ -105,9 +105,10 @@ class User(Resource):
         if me:
             raise UserAlreadyExist
         u = UserModel()
-        u.init_user(email, password)
         db.session.add(u)
         try:
+            db.session.commit()
+            u.init_user(email, password)
             db.session.commit()
         except:
             db.session.rollback()
