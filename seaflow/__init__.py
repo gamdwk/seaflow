@@ -36,8 +36,9 @@ from .social.chat import Chat
 from .auth import register_auth_api
 from .social import register_social_api
 from .files import Files
-
+from .admin.resource import register_admin_api
 io.on_namespace(Chat('/chat'))
 register_auth_api()
 register_social_api()
 api.add_resource(Files, '/files', '/files/<int:id>')
+register_admin_api()

@@ -36,7 +36,7 @@ class NewsResource(Resource):
             else:
                 ts = News.query
             uid = g.user["uid"]
-            ts = ts.order_by(-News.time)
+            ts = ts.order_by(News.time.desc())
             ts = ts.paginate(page=page, per_page=5)
             tss = ts.items
             x = []
@@ -307,15 +307,27 @@ class AgreeFriends(Resource):
 
 
 from sqlalchemy.sql.expression import func
+from ..fields.auth import randomUserRes
 
 
 class RandomUser(Resource):
     method_decorators = [auth.login_required()]
 
-    def get(self):
+    def get(self, num=1):
         uid = g.user["uid"]
-        us = User.query.filter(User.id.isnot(uid)).order_by(func.random()).limit(5).all()
-        res = {"user": [u.make_fields() for u in us]}
+        me = User.query.get(uid)
+        fid = [u.id for u in me.friends]
+        uids = {me.id}
+        if fid:
+            fid = set(fid)
+            uids.update(fid)
+        us = User.query.filter(User.id.notin_(uids))
+        if us.count() >= num:
+            us = us.order_by(func.random()).limit(num).all()
+        else:
+            us = us.all()
+        res = {"users": [u.make_fields() for u in us]}
+        return randomUserRes.marshal(res)
 
 
 def register_social_api():
@@ -329,3 +341,4 @@ def register_social_api():
     api.add_resource(AgreeFriends, '/friends/agree/<int:mid>')
     api.add_resource(UntreatedFriendsMessage, '/friends/not_handle')
     api.add_resource(TreatedFriendsMessage, '/friends/handled')
+    api.add_resource(RandomUser, '/friends/random', '/friends/random/<int:num>')

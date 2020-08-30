@@ -1,5 +1,5 @@
 from flask_restful import Resource
-from ..main.exts import auth, db
+from ..main.exts import auth, db, api
 from ..fields.auth import userListRes, user_response
 from ..models.auth import User
 from ..error import DbError
@@ -8,12 +8,15 @@ from flask_restful.reqparse import RequestParser
 
 
 class UserAdmin(Resource):
-    method_decorators = [auth.login_required(role='admin')]
+    method_decorators = [auth.login_required(role='administrator')]
 
     def __init__(self):
         self.del_parse = RequestParser()
         self.del_parse.add_argument("email", type=str)
         self.del_parse.add_argument("uid", type=int)
+        self.post_parser = RequestParser()
+        self.post_parser.add_argument("email", type=str, required=True)
+        self.post_parser.add_argument("password", type=str, required=True)
 
     def get(self, page=1):
         us = User.query.paginate(page=page, per_page=10)
@@ -22,7 +25,10 @@ class UserAdmin(Resource):
                                     "pages": us.pages,
                                     "current": us.page})
 
-    def post(self, email, password):
+    def post(self):
+        args = self.post_parser.parse_args()
+        email = args["email"]
+        password = args["password"]
         if User.query.filter_by(email=email).first() is not None:
             raise UserAlreadyExist
         u = User()
@@ -47,3 +53,8 @@ class UserAdmin(Resource):
         except:
             db.session.rollback()
             raise DbError
+
+
+def register_admin_api():
+    api.add_resource(UserAdmin, '/admin/user/pages/<int:page>',
+                     '/admin/user')
