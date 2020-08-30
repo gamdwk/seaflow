@@ -233,7 +233,7 @@ class Friends(Resource):
         m.init(g.user["uid"], uid, content="您已被移除好友", type="notice")
         db.session.add(m)
         u = User.query.get_or_404(uid)
-        u.break_up(g.user["uid"])
+        break_up(u, g.user["uid"])
         db.session.commit()
         io.emit('chat', m.make_fields(), room=g.user["uid"], namespace='/chat')
         if is_alive(uid):
@@ -246,7 +246,7 @@ class UntreatedFriendsMessage(Resource):
     method_decorators = [auth.login_required()]
 
     def get(self):
-        ms = Messages.query.filter_by(type="apply").filter(
+        ms = Messages.query.filter_by(type="apply", to_user=g.user["uid"]).filter(
             Messages.agree.is_(None)
         ).all()
         res = [m.make_fields() for m in ms]
@@ -259,13 +259,16 @@ class TreatedFriendsMessage(Resource):
     method_decorators = [auth.login_required()]
 
     def get(self):
-        ms = Messages.query.filter(Messages.type == "apply").filter(
+        ms = Messages.query.filter_by(type="apply", to_user=g.user["uid"]).filter(
             Messages.agree.isnot(None)
         ).all()
         res = [m.make_fields() for m in ms]
         return friendsReply.marshal({
             "reply": res
         })
+
+
+from ..models.auth import make_friends, break_up
 
 
 class AgreeFriends(Resource):
@@ -285,7 +288,7 @@ class AgreeFriends(Resource):
             return {"code": 30002, "message": "这个请求已经处理"}
         args = self.reparser.parse_args()
         if args["agree"]:
-            u.make_friends(g.user["uid"])
+            make_friends(u, g.user["uid"])
             msg.agree = True
             db.session.commit()
             uid1 = uid
@@ -294,8 +297,8 @@ class AgreeFriends(Resource):
                                             to_user=uid1).filter(
                 Messages.agree.is_(None)
             ).all()
-            msg2 = Messages.query.filter_by(type="apply", from_user=uid2,
-                                            to_user=uid1).filter(
+            msg2 = Messages.query.filter_by(type="apply", from_user=uid1,
+                                            to_user=uid2).filter(
                 Messages.agree.is_(None)
             ).all()
             msgs.extend(msg2)

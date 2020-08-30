@@ -45,21 +45,24 @@ class User(db.Model):
     def get_role(self):
         return self.role.name
 
-    def make_friends(self, uid):
-        self.friends.append(User.query.get(uid))
-        db.session.commit()
-        friend = User.query.get(uid)
-        friend.friends.append(self)
-
-    def break_up(self, uid):
-        self.friends.remove(User.query.get(uid))
-        friend = User.query.get(uid)
-        friend.friends.remove(self)
-
     def make_fields(self):
         data = self.__dict__
         data['uid'] = self.id
         return data
+
+
+def make_friends(u, uid):
+    u.friends.append(User.query.get(uid))
+    db.session.commit()
+    friend = User.query.get(uid)
+    friend.friends.append(u)
+
+
+def break_up(u, uid):
+    u.friends.remove(User.query.get(uid))
+    db.session.commit()
+    friend = User.query.get(uid)
+    friend.friends.remove(u)
 
 
 class Role(db.Model):

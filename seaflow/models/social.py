@@ -45,7 +45,7 @@ class News(db.Model):
         else:
             comments = 0
         return {"tid": self.id, "content": self.content, 'imgs': self.imgs,
-                "uid": uid, "time": self.time,
+                "uid": self.auth_id, "time": self.time,
                 'liked': news_is_like(uid, self.id), 'likes': get_like(self.id),
                 "comments": comments,
                 "avatar": self.auth.avatar, "username": self.auth.username,
