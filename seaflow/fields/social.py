@@ -1,6 +1,5 @@
 from . import ResponseField
-from flask_restful.fields import Integer, Nested, Url, String, Raw, Boolean, DateTime, List
-from flask_restful import marshal
+from flask_restful.fields import Integer, Nested, String, Boolean, DateTime, List
 
 newsfield = {
     'content': String(),
