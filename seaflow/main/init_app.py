@@ -27,4 +27,5 @@ def create_app(config):
     def first_request():
         from ..models.auth import create_role
         create_role()
+        print("hello")
     return app

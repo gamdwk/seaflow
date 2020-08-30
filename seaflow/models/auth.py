@@ -56,6 +56,11 @@ class User(db.Model):
         friend = User.query.get(uid)
         friend.friends.remove(self)
 
+    def make_fields(self):
+        data = self.__dict__
+        data['uid'] = self.id
+        return data
+
 
 class Role(db.Model):
     __tablename__ = 'roles'
@@ -84,17 +89,17 @@ def create_role():
             db.session.commit()
         except:
             db.session.rollback()
-    try:
-        admin = User()
-        admin.id = 1
-        test = User()
-        test.id = 2
-        admin.role_id = 1
-        test.role_id = 2
-        admin.init_user("admin", "admin")
-        test.init_user("admin", "admin")
-        db.session.add(admin)
-        db.session.add(test)
-        db.session.commit()
-    except:
-        db.session.rollback()
+    users = ["admin", "test"]
+    for user in users:
+        try:
+            if User.query.filter_by(email="user").first():
+                continue
+            admin = User()
+            admin.email = user
+            admin.role_id = 1
+            db.session.add(admin)
+            db.session.commit()
+            admin.init_user(user, user)
+            db.session.commit()
+        except:
+            db.session.rollback()

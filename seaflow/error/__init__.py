@@ -6,7 +6,7 @@ from itsdangerous import BadSignature, SignatureExpired
 
 class ApiException(HTTPException):
     code = 500
-    description = "deed"
+    description = "error"
     error_code = 500
 
     def __init__(self, description=None, code=None, error_code=None, *args, **kwargs):
@@ -20,12 +20,12 @@ class ApiException(HTTPException):
 
 class CodeError(ApiException):
     code = 400
-    description = '验证码错误'
+    description = 'VerificationCodeError '
 
 
 class DbError(ApiException):
     code = 500
-    description = "数据库错误"
+    description = "DatabaseError"
     error_code = 40000
 
 
@@ -37,7 +37,7 @@ class NotFound(ApiException):
 
 class NotAllow(ApiException):
     code = 403
-    description = "该资源不允许访问"
+    description = "Not Allow"
     error_code = 403
 
 

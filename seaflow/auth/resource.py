@@ -58,9 +58,6 @@ class Auth(Resource):
         return auth_response.marshal({"access_token": access_token,
                                       "refresh_token": refresh_token})
 
-    def delete(self):
-        return
-
 
 class User(Resource):
     method_decorators = {'get': [auth.login_required()],
@@ -69,9 +66,6 @@ class User(Resource):
 
     def __init__(self):
         self.reqparse = reqparse.copy()
-        self.del_parse = RequestParser()
-        self.del_parse.add_argument("email", type=str)
-        self.del_parse.add_argument("uid", type=int)
         self.put_parse = RequestParser()
         self.put_parse.add_argument("sex", type=int, choices=[0, 1, 2])
         self.put_parse.add_argument("pageBgc", type=str)
@@ -123,22 +117,6 @@ class User(Resource):
             db.session.commit()
             u = UserModel.query.get(uid)
             return user_response.marshal(u.__dict__)
-        except:
-            db.session.rollback()
-            raise DbError
-
-    def delete(self):
-        args = self.del_parse.parse_args()
-        try:
-            if args['uid']:
-                u = UserModel.query.get(args["uid"])
-            else:
-                u = UserModel.query.filter_by(email=args["email"]).first()
-            if u is None:
-                return {"code": 404, "message": "用户不存在"}, 404
-            db.session.delete(u)
-            db.session.commit()
-            return {"code": 0, "message": "删除成功"}
         except:
             db.session.rollback()
             raise DbError

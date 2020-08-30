@@ -43,9 +43,14 @@ friends = {
     "current": Integer,
     "pages": Integer
 }
-
+UserList = {
+    "users": List(Nested(user_field)),
+    "current": Integer,
+    "pages": Integer
+}
 auth_response = ResponseField(auth_field)
 user_response = ResponseField(user_field)
 email_response = ResponseField(email_field)
 user_register_response = ResponseField(user_register_field)
 friendsRes = ResponseField(friends)
+userListRes = ResponseField(UserList)

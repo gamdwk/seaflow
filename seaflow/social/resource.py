@@ -23,7 +23,6 @@ class NewsResource(Resource):
         self.post_reqparse.add_argument('imgs', type=str, action="append")
 
     def get(self, id=None, uid=None, page=1):
-        me = g.user
         if id is not None:
             t = News.query.get_or_404(id)
             uid = t.auth_id
@@ -32,8 +31,11 @@ class NewsResource(Resource):
             return newsRes.marshal(
                 t.make_fields(uid))
         else:
-            uid = uid or me['uid']
-            ts = User.query.get_or_404(uid).news
+            if uid is not None:
+                ts = User.query.get_or_404(uid).news
+            else:
+                ts = News.query
+            uid = g.user["uid"]
             ts = ts.order_by(-News.time)
             ts = ts.paginate(page=page, per_page=5)
             tss = ts.items
@@ -302,6 +304,18 @@ class AgreeFriends(Resource):
             msg.agree = False
         db.session.commit()
         return ResponseField().marshal()
+
+
+from sqlalchemy.sql.expression import func
+
+
+class RandomUser(Resource):
+    method_decorators = [auth.login_required()]
+
+    def get(self):
+        uid = g.user["uid"]
+        us = User.query.filter(User.id.isnot(uid)).order_by(func.random()).limit(5).all()
+        res = {"user": [u.make_fields() for u in us]}
 
 
 def register_social_api():
