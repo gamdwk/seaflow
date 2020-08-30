@@ -203,8 +203,10 @@ class Friends(Resource):
         uid = g.user["uid"]
         me = User.query.get(uid)
         friends = me.friends
+        fid = [f.id for f in friends]
+        friends = User.query.filter(User.id.in_(fid))
         friends = friends.paginate(page=page, per_page=5)
-        res = [f.make_friends(uid) for f in friends]
+        res = [f.id for f in friends.items]
         return friendsRes.marshal({
             "friends": res,
             "current": page,
@@ -220,7 +222,7 @@ class Friends(Resource):
         db.session.commit()
         if is_alive(uid):
             io.emit('chat', m.make_fields(), room=uid,
-                    callback=make_message_send([m]))
+                    callback=make_message_send([m]), namespace='/chat')
         return ResponseField().marshal()
 
     def delete(self, uid):
@@ -232,7 +234,7 @@ class Friends(Resource):
         db.session.commit()
         if is_alive(uid):
             io.emit('chat', m.make_fields(), room=uid,
-                    callback=make_message_send([m]))
+                    callback=make_message_send([m]), namespace='/chat')
         return ResponseField().marshal()
 
 
@@ -240,7 +242,9 @@ class UntreatedFriendsMessage(Resource):
     method_decorators = [auth.login_required()]
 
     def get(self):
-        ms = Messages.query.filter_by(type="apply", agree=None).all()
+        ms = Messages.query.filter_by(type="apply").filter(
+            Messages.agree.is_(None)
+        ).all()
         res = [m.make_fields() for m in ms]
         return friendsReply.marshal({
             "reply": res
@@ -252,7 +256,7 @@ class TreatedFriendsMessage(Resource):
 
     def get(self):
         ms = Messages.query.filter(Messages.type == "apply").filter(
-            Messages.agree is not None
+            Messages.agree.isnot(None)
         ).all()
         res = [m.make_fields() for m in ms]
         return friendsReply.marshal({
@@ -271,22 +275,43 @@ class AgreeFriends(Resource):
         msg = Messages.query.get_or_404(mid)
         uid = msg.from_user
         u = User.query.get_or_404(uid)
+        if msg.to_user != g.user["uid"]:
+            return {"code": 30002, "message": "这个请求不是给你的！"}
+        elif msg.agree is not None:
+            return {"code": 30002, "message": "这个请求已经处理"}
         args = self.reparser.parse_args()
         if args["agree"]:
             u.make_friends(g.user["uid"])
+            msg.agree = True
+            db.session.commit()
+            uid1 = uid
+            uid2 = g.user["uid"]
+            msgs = Messages.query.filter_by(type="apply", from_user=uid2,
+                                            to_user=uid1).filter(
+                Messages.agree.is_(None)
+            ).all()
+            msg2 = Messages.query.filter_by(type="apply", from_user=uid2,
+                                            to_user=uid1).filter(
+                Messages.agree.is_(None)
+            ).all()
+            msgs.extend(msg2)
+            for msg in msgs:
+                msg.agree = True
+            db.session.commit()
         else:
-            u.break_up(g.user["uid"])
+            msg.agree = False
         db.session.commit()
         return ResponseField().marshal()
 
 
-api.add_resource(NewsResource, '/news', '/news/page/<int:page>', '/news/<int:id>',
-                 '/user/<int:uid>/news/page/<int:page>')
-api.add_resource(Like, '/like/news/<int:tid>', '/like/comments/<int:cid>')
-api.add_resource(Comment, '/comment', '/comment/<int:cid>',
-                 '/news/<int:tid>/comments', '/news/<int:tid>/comments/<int:page>')
-api.add_resource(Groups, '/groups/<int:gid>', '/groups/<int:gid>/page/<int:page>')
-api.add_resource(Friends, '/friends', '/friends/<int:uid>')
-api.add_resource(AgreeFriends, '/friends/agree')
-api.add_resource(UntreatedFriendsMessage, '/friends/not_handle')
-api.add_resource(TreatedFriendsMessage, '/friends/handled')
+def register_social_api():
+    api.add_resource(NewsResource, '/news', '/news/page/<int:page>', '/news/<int:id>',
+                     '/user/<int:uid>/news/page/<int:page>')
+    api.add_resource(Like, '/like/news/<int:tid>', '/like/comments/<int:cid>')
+    api.add_resource(Comment, '/comment', '/comment/<int:cid>',
+                     '/news/<int:tid>/comments', '/news/<int:tid>/comments/<int:page>')
+    api.add_resource(Groups, '/groups/<int:gid>', '/groups/<int:gid>/page/<int:page>')
+    api.add_resource(Friends, '/friends', '/friends/<int:uid>')
+    api.add_resource(AgreeFriends, '/friends/agree/<int:mid>')
+    api.add_resource(UntreatedFriendsMessage, '/friends/not_handle')
+    api.add_resource(TreatedFriendsMessage, '/friends/handled')

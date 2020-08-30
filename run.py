@@ -1,9 +1,7 @@
 from seaflow.main import create_app
 from config import DevelopmentConfig
 from seaflow.models.auth import create_role
-from seaflow import io
 
-create_role()
 app = create_app(DevelopmentConfig)
 app.app_context().push()
 

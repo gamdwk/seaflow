@@ -38,7 +38,9 @@ class Chat(Namespace):
 
 
 def send_messages(uid):
-    msgs = Messages.query.filter_by(to_user=uid, is_send=False).all()
+    msgs = Messages.query.filter_by(to_user=uid, is_send=False).filter(
+        Messages.agree.is_(None)
+    ).all()
     res = []
     for msg in msgs:
         re = msg.make_fields()

@@ -19,18 +19,25 @@ def register_celery(flask_app):
 
 from .main import create_app
 from config import DevelopmentConfig
+
 app = create_app(DevelopmentConfig)
+register_celery(app)
 app.app_context().push()
+
+
 @celery.task
 def send_async_mail(subject, recipients, *args, **kwargs):
     from .helper import send_mail
     send_mail(subject=subject, recipients=recipients, *args, **kwargs)
 
 
-from .main.exts import api
-from .helper import *
-from .auth import *
-from .error import *
-from .main import *
-from .files import *
-from .social import *
+from .main.exts import io, api
+from .social.chat import Chat
+from .auth import register_auth_api
+from .social import register_social_api
+from .files import Files
+
+io.on_namespace(Chat('/chat'))
+register_auth_api()
+register_social_api()
+api.add_resource(Files, '/files', '/files/<int:id>')

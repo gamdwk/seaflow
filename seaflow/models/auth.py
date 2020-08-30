@@ -47,6 +47,7 @@ class User(db.Model):
 
     def make_friends(self, uid):
         self.friends.append(User.query.get(uid))
+        db.session.commit()
         friend = User.query.get(uid)
         friend.friends.append(self)
 
@@ -84,15 +85,16 @@ def create_role():
         except:
             db.session.rollback()
     try:
-        u = User()
-        u1 = User()
-        db.session.add(u)
-        db.session.add(u1)
-        db.session.commit()
-        u.init_user('admin', 'admin')
-        u.role_id = 1
-        u1.init_user('test', 'test')
-        u1.role_id = 2
+        admin = User()
+        admin.id = 1
+        test = User()
+        test.id = 2
+        admin.role_id = 1
+        test.role_id = 2
+        admin.init_user("admin", "admin")
+        test.init_user("admin", "admin")
+        db.session.add(admin)
+        db.session.add(test)
         db.session.commit()
     except:
         db.session.rollback()

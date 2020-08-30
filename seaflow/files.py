@@ -66,7 +66,3 @@ def create_filename(root, folder, filename):
 def get_suffix(filename):
     suffix = splitext(filename)[1]
     return suffix
-
-
-api.add_resource(Files, '/files', '/files/<int:id>')
-

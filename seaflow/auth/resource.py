@@ -1,7 +1,6 @@
 from seaflow.main.exts import api, db, auth
 from flask_restful import Resource
 from flask_restful.reqparse import RequestParser
-from itsdangerous import BadSignature
 from seaflow.models.auth import User as UserModel
 from flask import g
 from .token import create_login_token
@@ -227,8 +226,9 @@ class PasswordWhenLogin(Resource):
             raise DbError
 
 
-api.add_resource(Auth, '/auth', endpoint='auth')
-api.add_resource(Email, '/email', endpoint='email')
-api.add_resource(User, '/user', '/user/uid/<int:uid>', endpoint="user")
-api.add_resource(Password, '/user/password', endpoint="password")
-api.add_resource(PasswordWhenLogin, '/password')
+def register_auth_api():
+    api.add_resource(Auth, '/auth', endpoint='auth')
+    api.add_resource(Email, '/email', endpoint='email')
+    api.add_resource(User, '/user', '/user/uid/<int:uid>', endpoint="user")
+    api.add_resource(Password, '/user/password', endpoint="password")
+    api.add_resource(PasswordWhenLogin, '/password')

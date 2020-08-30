@@ -1,5 +1,4 @@
 from flask import Flask
-from seaflow import register_celery
 
 
 def register_blueprint(app):
@@ -21,7 +20,11 @@ def register_ext(app):
 def create_app(config):
     app = Flask(__name__)
     app.config.from_object(config)
-    register_celery(app)
     register_blueprint(app)
     register_ext(app)
+
+    @app.before_first_request
+    def first_request():
+        from ..models.auth import create_role
+        create_role()
     return app

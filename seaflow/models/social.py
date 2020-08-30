@@ -213,10 +213,10 @@ class Messages(db.Model):
     is_url = db.Column(db.Boolean, default=False)
     from_user = db.Column(db.Integer)
     to_user = db.Column(db.Integer)
-    type = db.Column(db.String, default="message")
+    type = db.Column(db.String(64), default="message")
     # type分为message, apply(好友申请）,notice(系统通知）
     is_send = db.Column(db.Boolean, default=False)
-    Agree = db.Column(db.Boolean)
+    agree = db.Column(db.Boolean)
     time = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def init(self, from_user, to_user, content=None, is_url=False, type="message"):
@@ -234,5 +234,6 @@ class Messages(db.Model):
             "content": self.content,
             "type": self.type,
             "is_url": self.is_url,
-            "time": self.time
+            "time": self.time,
+            "agree": self.agree
         }
