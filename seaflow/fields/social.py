@@ -83,8 +83,11 @@ messagesFields = {
     "type": String,
     "is_url": Boolean,
     "time": DateTime(dt_format='iso8601'),
-    "agree": Boolean
+    "agree": Boolean,
+    "avatar": String,
+    "username": String
 }
+
 messageList = {
     "messages": List(Nested(messagesFields)),
 }

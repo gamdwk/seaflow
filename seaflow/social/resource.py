@@ -225,6 +225,7 @@ class Friends(Resource):
         if is_alive(uid):
             io.emit('chat', m.make_fields(), room=uid,
                     callback=make_message_send([m]), namespace='/chat')
+        io.emit('chat', m.make_fields(), room=g.user["uid"], namespace='/chat')
         return ResponseField().marshal()
 
     def delete(self, uid):
@@ -234,6 +235,7 @@ class Friends(Resource):
         u = User.query.get_or_404(uid)
         u.break_up(g.user["uid"])
         db.session.commit()
+        io.emit('chat', m.make_fields(), room=g.user["uid"], namespace='/chat')
         if is_alive(uid):
             io.emit('chat', m.make_fields(), room=uid,
                     callback=make_message_send([m]), namespace='/chat')
@@ -308,12 +310,13 @@ class AgreeFriends(Resource):
 
 from sqlalchemy.sql.expression import func
 from ..fields.auth import randomUserRes
+from ..helper.rediscli import is_alive
 
 
 class RandomUser(Resource):
     method_decorators = [auth.login_required()]
 
-    def get(self, num=1):
+    def get(self, num=1, alive=True):
         uid = g.user["uid"]
         me = User.query.get(uid)
         fid = [u.id for u in me.friends]
@@ -322,6 +325,9 @@ class RandomUser(Resource):
             fid = set(fid)
             uids.update(fid)
         us = User.query.filter(User.id.notin_(uids))
+        if alive:
+            alive_uid = filter(is_alive, [u.id for u in us.all()])
+            us = us.filter(User.id.in_(alive_uid))
         if us.count() >= num:
             us = us.order_by(func.random()).limit(num).all()
         else:
@@ -341,4 +347,5 @@ def register_social_api():
     api.add_resource(AgreeFriends, '/friends/agree/<int:mid>')
     api.add_resource(UntreatedFriendsMessage, '/friends/not_handle')
     api.add_resource(TreatedFriendsMessage, '/friends/handled')
-    api.add_resource(RandomUser, '/friends/random', '/friends/random/<int:num>')
+    api.add_resource(RandomUser, '/friends/random', '/friends/random/<int:num>',
+                     '/friends/random/<int:num>/alive/<int:alive>')

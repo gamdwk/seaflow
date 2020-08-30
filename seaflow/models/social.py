@@ -206,6 +206,9 @@ class Contents(db.Model):
         return imgs
 
 
+from .auth import User
+
+
 class Messages(db.Model):
     __tablename__ = "messages"
     id = db.Column(db.Integer, primary_key=True)
@@ -227,6 +230,7 @@ class Messages(db.Model):
         self.type = type
 
     def make_fields(self):
+        from_user = User.query.get(self.from_user)
         return {
             "mid": self.id,
             "from": self.from_user,
@@ -235,5 +239,7 @@ class Messages(db.Model):
             "type": self.type,
             "is_url": self.is_url,
             "time": self.time,
-            "agree": self.agree
+            "agree": self.agree,
+            "avatar": from_user.avatar,
+            "username": from_user.username
         }

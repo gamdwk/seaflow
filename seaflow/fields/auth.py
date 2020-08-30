@@ -22,6 +22,7 @@ auth_field = {
 }
 
 user_field = {
+    "uid": Integer,
     "email": String,
     "sex": Integer,
     "introduction": String,

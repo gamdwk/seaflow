@@ -27,10 +27,12 @@ class Chat(Namespace):
         m.init(uid, to, content, is_url=is_url)
         db.session.add(m)
         db.session.commit()
+        res = m.make_fields()
         if is_alive(to):
-            res = m.make_fields()
             emit('chat', MessagesListRes.marshal({"messages": [res]}),
+                 room=to,
                  callback=make_message_send([m]))
+        emit('chat', MessagesListRes.marshal({"messages": [res]}))
 
     def on_disconnect(self):
         make_down(session["uid"])
