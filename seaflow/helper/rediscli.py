@@ -65,19 +65,19 @@ def get_like(tid_or_cid, t=0):
     return x
 
 
-def get_sid(uid):
+def get_uid(sid):
     cli = StrictRedis(connection_pool=pool)
-    return cli.hget("user_sid", uid)
+    return cli.hget("user_sid", sid)
 
 
 def set_sid(uid, sid):
     cli = StrictRedis(connection_pool=pool)
-    cli.hset("user_sid", uid, sid)
+    cli.hset("user_sid", sid, uid)
 
 
-def delete_sid(uid):
+def delete_sid(sid):
     cli = StrictRedis(connection_pool=pool)
-    cli.hdel("user_sid", uid)
+    cli.hdel("user_sid", sid)
 
 
 def is_alive(uid):

@@ -2,7 +2,8 @@ from ..main.exts import io, auth, api, db
 from flask_socketio import send, emit, Namespace, disconnect, rooms, join_room
 from flask import request, g, session
 from ..models.social import Messages
-from ..helper.rediscli import is_alive, make_down, make_alive, set_sid, delete_sid
+from ..helper.rediscli import is_alive, make_down, make_alive, set_sid, \
+    delete_sid, get_uid
 from ..fields.social import MessagesListRes, MessagesRes
 
 
@@ -35,8 +36,8 @@ class Chat(Namespace):
         emit('chat', MessagesListRes.marshal({"messages": [res]}))
 
     def on_disconnect(self):
-        make_down(session["uid"])
-        delete_sid(session["uid"])
+        make_down(get_uid(request.sid))
+        delete_sid(request.sid)
 
 
 def send_messages(uid):

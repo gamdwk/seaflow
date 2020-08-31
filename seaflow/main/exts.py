@@ -13,3 +13,6 @@ auth = HTTPTokenAuth(scheme='JWT')
 mail = Mail()
 bcrypt = Bcrypt()
 io = SocketIO(cors_allowed_origins='*', engineio_logger=True, logger=True)
+from ..social.chat import Chat
+
+io.on_namespace(Chat('/chat'))
