@@ -1,16 +1,16 @@
 from . import ResponseField
 from flask_restful.fields import Integer, Nested, String, Boolean, DateTime, List
-
+from . import StaticUrl
 newsfield = {
     'content': String(),
-    'imgs': List(String()),
+    'imgs': List(StaticUrl()),
     'time': DateTime(dt_format='iso8601'),
     'uid': Integer,
     'tid': Integer,
     'liked': Boolean,
     'likes': Integer,
     "comments": Integer,
-    "avatar": String,
+    "avatar": StaticUrl,
     "sex": Integer,
     "username": String
 }
@@ -32,7 +32,7 @@ newslike = {
 
 commentsField = {
     'content': String(),
-    'imgs': List(String),
+    'imgs': List(StaticUrl),
     'time': DateTime(dt_format='iso8601'),
     'uid': Integer,
     'tid': Integer,
@@ -41,7 +41,7 @@ commentsField = {
     'likes': Integer,
     'parent': Integer,
     "ancestor": Integer,
-    "avatar": String,
+    "avatar": StaticUrl,
     "sex": Integer,
     "username": String
 }
@@ -83,7 +83,7 @@ messagesFields = {
     "is_url": Boolean,
     "time": DateTime(dt_format='iso8601'),
     "agree": Boolean,
-    "avatar": String,
+    "avatar": StaticUrl,
     "username": String
 }
 

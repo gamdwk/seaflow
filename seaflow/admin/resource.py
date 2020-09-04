@@ -55,6 +55,10 @@ class UserAdmin(Resource):
             raise DbError
 
 
+class Lock(Resource):
+    method_decorators = [auth.login_required(role=['administrator', 'auditor'])]
+
+
 def register_admin_api():
     api.add_resource(UserAdmin, '/admin/user/pages/<int:page>',
                      '/admin/user')
