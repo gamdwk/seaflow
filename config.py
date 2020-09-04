@@ -20,7 +20,7 @@ class Config(object):
     MAIL_PORT = 465
     MAIL_USE_TLS = False
     MAIL_USERNAME = '728882065@qq.com'
-    MAIL_PASSWORD = 'password'
+    MAIL_PASSWORD = 'ungegpxsacgabfee'
     MAIL_DEFAULT_SENDER = ("seaflow", "728882065@qq.com")
     # flask-bcrypt
     BCRYPT_LOG_ROUNDS = 12
