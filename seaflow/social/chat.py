@@ -44,6 +44,8 @@ def send_messages(uid):
     msgs = Messages.query.filter_by(to_user=uid, is_send=False).filter(
         Messages.agree.is_(None)
     ).all()
+    if len(msgs) == 0:
+        return
     res = []
     for msg in msgs:
         re = msg.make_fields()

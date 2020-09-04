@@ -82,7 +82,7 @@ def delete_sid(sid):
 
 def is_alive(uid):
     cli = StrictRedis(connection_pool=pool)
-    return cli.hget("is_alive", uid) or False
+    return cli.hget("is_alive", uid) == str(1)
 
 
 def make_alive(uid):
