@@ -3,6 +3,7 @@ from seaflow.fields import error_fields
 from flask_restful import marshal
 from itsdangerous import BadSignature, SignatureExpired
 from werkzeug.datastructures import Headers
+from flask import request
 
 
 class ApiException(HTTPException):
@@ -19,10 +20,13 @@ class ApiException(HTTPException):
         self.data = {"code": self.error_code, "message": self.description}
 
     def get_headers(self, environ=None):
+
         headers = Headers([("Content-Type", "application/json; charset=utf-8")])
-        headers.update(
-            {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Method': 'OPTIONS,HEAD,GET,POST,PUT,DELETE'
-                , 'Access-Control-Allow-Headers': 'x-requested-with'})
+        if 'Origin' in request.headers:
+            origin = request.headers['Origin']
+            headers.update(
+                {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Method': 'OPTIONS,HEAD,GET,POST'
+                    , 'Access-Control-Allow-Headers': '*', 'Control-Allow-Credentials': 'true'})
         return headers
 
 
