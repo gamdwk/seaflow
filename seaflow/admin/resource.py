@@ -5,6 +5,7 @@ from ..models.auth import User
 from ..error import DbError
 from ..error.auth import UserNotExist, UserAlreadyExist
 from flask_restful.reqparse import RequestParser
+from ..fields.admin import LockRes
 
 
 class UserAdmin(Resource):
@@ -58,7 +59,28 @@ class UserAdmin(Resource):
 class Lock(Resource):
     method_decorators = [auth.login_required(role=['administrator', 'auditor'])]
 
+    def __init__(self):
+        self.parser = RequestParser()
+        self.parser.add_argument('uid', type=int, action="append")
+        self.parser.add_argument('lock', type=bool)
+
+    def put(self):
+        arg = self.parser.parse_args()
+        data = []
+        for uid in arg['uid']:
+            u = User.query.get(uid)
+            if u is not None:
+                u.lock = arg['lock'] or bool(1 - u.lock)
+                data.append({'uid': uid, 'lock': u.lock})
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            raise DbError
+        return LockRes.marshal({'users': data})
+
 
 def register_admin_api():
     api.add_resource(UserAdmin, '/admin/user/pages/<int:page>',
                      '/admin/user')
+    api.add_resource(Lock, '/admin/lock')

@@ -26,7 +26,7 @@ class ApiException(HTTPException):
             origin = request.headers['Origin']
             headers.update(
                 {'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Method': 'OPTIONS,HEAD,GET,POST'
-                    , 'Access-Control-Allow-Headers': '*', 'Control-Allow-Credentials': 'true'})
+                    , 'Access-Control-Allow-Headers': '*', 'Control-Allow-Credentials': 'true', 'Vary': 'Origin'})
         return headers
 
 
