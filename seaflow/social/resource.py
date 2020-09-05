@@ -191,7 +191,7 @@ from ..main.exts import io
 from ..helper.rediscli import make_alive, make_down, is_alive
 from ..models.social import Messages
 from .chat import make_message_send
-from ..fields.social import friendsReply
+from ..fields.social import friendsReply, MessagesListRes
 
 
 class Friends(Resource):
@@ -223,9 +223,9 @@ class Friends(Resource):
         db.session.add(m)
         db.session.commit()
         if is_alive(uid):
-            io.emit('chat', m.make_fields(), room=uid,
+            io.emit('chat', MessagesListRes.marshal({"messages": [m.make_fields()]}), room=uid,
                     callback=make_message_send([m]), namespace='/chat')
-        io.emit('chat', m.make_fields(), room=g.user["uid"], namespace='/chat')
+        io.emit('chat', MessagesListRes.marshal({"messages": [m.make_fields()]}), room=g.user["uid"], namespace='/chat')
         return ResponseField().marshal()
 
     def delete(self, uid):
@@ -235,9 +235,9 @@ class Friends(Resource):
         u = User.query.get_or_404(uid)
         break_up(u, g.user["uid"])
         db.session.commit()
-        io.emit('chat', m.make_fields(), room=g.user["uid"], namespace='/chat')
+        io.emit('chat', MessagesListRes.marshal({"messages": [m.make_fields()]}), room=g.user["uid"], namespace='/chat')
         if is_alive(uid):
-            io.emit('chat', m.make_fields(), room=uid,
+            io.emit('chat', MessagesListRes.marshal({"messages": [m.make_fields()]}), room=uid,
                     callback=make_message_send([m]), namespace='/chat')
         return ResponseField().marshal()
 
