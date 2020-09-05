@@ -66,7 +66,7 @@ class NewsResource(Resource):
         me = g.user
         uid = me['uid']
         try:
-            t = News.query.get_or_404(id)
+            t = News.query.get(id)
             if t is None:
                 raise NotFound
             if t.auth_id != uid:
