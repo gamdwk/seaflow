@@ -11,7 +11,7 @@ click==7.1.2
 click-didyoumean==0.0.3
 click-repl==0.1.6
 dnspython==1.16.0
-eventlet==0.26.1
+eventlet==0.31.0
 Flask==1.1.2
 Flask-Bcrypt==0.7.1
 Flask-Celery-Helper==1.1.0
